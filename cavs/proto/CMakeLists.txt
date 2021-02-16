@@ -26,7 +26,7 @@ FUNCTION(protobuf_gen_cpp gen_header_files gen_cpp_files)
       OUTPUT ${header} ${cpp} 
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}
-      COMMAND ${PROTOBUF_PROTOC_EXECUTABLE} -I${PROJECT_SOURCE_DIR} --cpp_out ${PROJECT_BINARY_DIR} ${f}
+      COMMAND ${CMAKE_COMMAND} -E env "PATH=$ENV{PATH}" protoc -I${PROJECT_SOURCE_DIR} --cpp_out ${PROJECT_BINARY_DIR} ${f}
       COMMENT "Compiling Protobuf files into header and cc files"
       DEPENDS ${f}
       VERBATIM)
@@ -40,3 +40,4 @@ ENDFUNCTION()
 protobuf_gen_cpp(gen_headers gen_cpps ${proto_files})
 SET(gen_proto_headers ${gen_headers} PARENT_SCOPE)
 ADD_LIBRARY(proto_def OBJECT ${gen_cpps} ${gen_headers})
+TARGET_LINK_LIBRARIES(proto_def protobuf::libprotobuf)
