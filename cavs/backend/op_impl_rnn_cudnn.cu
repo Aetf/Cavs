@@ -105,14 +105,24 @@ RNNOpCudnnBase<T>::RNNOpCudnnBase(const OpDef& def) :
   cudnnRNNMode_t mode = CUDNN_LSTM;
   CHECK(hidden_size_ > 0);
   CHECK(num_layers_ > 0);
+
+#if CUDNN_VERSION >= 8000
+  cudnnRNNAlgo_t algo;
+  checkCUDNNError(cudnnSetRNNDescriptor_v6(
+        CudaCommon::cudnnHandle(),
+#else
   checkCUDNNError(cudnnSetRNNDescriptor(
+#endif
         rnn_desc_,
         hidden_size_,
         num_layers_,
         dropout_desc_,
         CUDNN_LINEAR_INPUT, //hard-coded now
         CUDNN_UNIDIRECTIONAL, //hard-coded now
-        CUDNN_LSTM, //hard-coded now
+        mode, //hard-coded now
+#if CUDNN_VERSION >= 8000
+        algo,
+#endif
         DataTypeToCudnnType<T>::value));
 }
 

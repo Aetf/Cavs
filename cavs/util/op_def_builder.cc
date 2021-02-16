@@ -93,6 +93,7 @@ OpDefBuilder& OpDefBuilder::Shape(const OpDef& def) {
 
 OpDefBuilder& OpDefBuilder::Dtype(const DataType type) {
   op_def_.set_dtype(type);
+  return *this;
 }
 
 OpDefBuilder& OpDefBuilder::Label(const string& label) {

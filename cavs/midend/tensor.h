@@ -23,7 +23,7 @@ class TensorBufferBase {
   virtual void* data()  const = 0;
   virtual size_t size() const = 0;
   virtual void InitWithZero() = 0;
-  virtual void* Resize(size_t size) = 0;
+  virtual void Resize(size_t size) = 0;
 
  protected:
   Allocator* const alloc_;
@@ -91,7 +91,7 @@ class Tensor {
   void Reshape(const Tensor& t);
   //void Resize(const TensorShapeDef& shape);
   void Resize(const TensorShape& shape);
-  bool ScaleDynamicDimension(int new_dim);
+  void ScaleDynamicDimension(int new_dim);
   template <typename T>
     T* mutable_data() const {
       return reinterpret_cast<T*>((char*)(buf_->data()) + params_->offset); 

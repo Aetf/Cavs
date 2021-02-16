@@ -41,7 +41,7 @@ class TensorBuffer : public TensorBufferBase {
   FORCE_INLINE void InitWithZero() override {
     alloc_->InitWithZero(data(), size());
   }
-  FORCE_INLINE void* Resize(size_t size) override { 
+  FORCE_INLINE void Resize(size_t size) override {
     CHECK(size % sizeof(T) == 0);
     CHECK(size != elem_*sizeof(T));
     if (data_) { alloc_->Deallocate<T>(data_); }
@@ -256,7 +256,7 @@ void Tensor::Resize(const TensorShape& shape) {
   shape_ = shape;
 }
 
-bool Tensor::ScaleDynamicDimension(int new_dim) {
+void Tensor::ScaleDynamicDimension(int new_dim) {
   CHECK_NOTNULL(params_.get());
   CHECK(params_->dynamic);
   int old_dim = shape_.dim(0);

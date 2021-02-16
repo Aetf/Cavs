@@ -108,9 +108,37 @@ void ConvOpCudnn<T>::Compute(OpContext* context) {
                   /*conv_desc_, x_desc_, filter_desc_, */
                   /*4, YDim));*/
 
+
+#if CUDNN_VERSION >= 8000
+  {
+    const int num_requested_algos = 5;
+    int num_returned_algos = 0;
+    cudnnConvolutionFwdAlgoPerf_t perf_results[num_requested_algos];
+    bool found = false;
+
+    checkCUDNNError(cudnnGetConvolutionForwardAlgorithm_v7(
+        CudaCommon::cudnnHandle(), x_desc_, filter_desc_, conv_desc_,
+        y_desc_, num_requested_algos, &num_returned_algos,
+        perf_results));
+
+    for (int r = 0; r < num_returned_algos; r++) {
+      if (perf_results[r].status == CUDNN_STATUS_SUCCESS &&
+          perf_results[r].algo != CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED &&
+          perf_results[r].memory <= 0) {
+        found = true;
+        fwd_algo_ = perf_results[r].algo;
+      }
+    }
+    if (!found) {
+      LOG(FATAL) << "CUDNN failure: cudnnGetConvolutionForwardAlgorithm_v7 returned no suitable algorithms.";
+    }
+  }
+#else
   checkCUDNNError(cudnnGetConvolutionForwardAlgorithm(CudaCommon::cudnnHandle(),
                   x_desc_, filter_desc_, conv_desc_, y_desc_,
                   CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, 0, &fwd_algo_));
+#endif
+
   checkCUDNNError(cudnnGetConvolutionForwardWorkspaceSize(CudaCommon::cudnnHandle(),
                   x_desc_, filter_desc_, conv_desc_, y_desc_,
                   fwd_algo_, &workspaceSizeInBytes));
@@ -203,15 +231,70 @@ void ConvOpCudnnGrad<T>::Compute(OpContext* context) {
   {
     size_t filter_worksize = 0;
     size_t data_worksize = 0;
+
+#if CUDNN_VERSION >= 8000
+    {
+      const int num_requested_algos = 5;
+      int num_returned_algos = 0;
+      cudnnConvolutionBwdFilterAlgoPerf_t perf_results[num_requested_algos];
+      bool found = false;
+
+      checkCUDNNError(cudnnGetConvolutionBackwardFilterAlgorithm_v7(
+          CudaCommon::cudnnHandle(), x_desc_, y_desc_, conv_desc_,
+          filter_desc_, num_requested_algos, &num_returned_algos, perf_results));
+
+      for (int r = 0; r < num_returned_algos; r++) {
+        if (perf_results[r].status == CUDNN_STATUS_SUCCESS &&
+            perf_results[r].algo !=
+                CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED &&
+            perf_results[r].memory <= 0) {
+          found = true;
+          bwd_f_algo_ = perf_results[r].algo;
+        }
+      }
+      if (!found) {
+        LOG(FATAL) << "CUDNN failure: cudnnGetConvolutionBackwardFilterAlgorithm_v7 returned no suitable algorithms.";
+      }
+    }
+#else
     checkCUDNNError(cudnnGetConvolutionBackwardFilterAlgorithm(CudaCommon::cudnnHandle(),
                     x_desc_, y_desc_, conv_desc_, filter_desc_, 
                     CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST, 0, &bwd_f_algo_));
+#endif
+
     checkCUDNNError(cudnnGetConvolutionBackwardFilterWorkspaceSize(CudaCommon::cudnnHandle(),
                     x_desc_, y_desc_, conv_desc_, filter_desc_,
                     bwd_f_algo_, &filter_worksize));
+#if CUDNN_VERSION >= 8000
+    {
+      const int num_requested_algos = 5;
+      int num_returned_algos = 0;
+      cudnnConvolutionBwdDataAlgoPerf_t perf_results[num_requested_algos];
+      bool found = false;
+
+      checkCUDNNError(cudnnGetConvolutionBackwardDataAlgorithm_v7(
+          CudaCommon::cudnnHandle(), filter_desc_, y_desc_, conv_desc_,
+          x_desc_, num_requested_algos, &num_returned_algos,
+          perf_results));
+
+      for (int r = 0; r < num_returned_algos; r++) {
+        if (perf_results[r].status == CUDNN_STATUS_SUCCESS &&
+            perf_results[r].algo !=
+                CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED &&
+            perf_results[r].memory <= 0) {
+          found = true;
+          bwd_d_algo_ = perf_results[r].algo;
+        }
+      }
+      if (!found) {
+        LOG(FATAL) << "CUDNN failure: cudnnGetConvolutionBackwardDataAlgorithm_v7 returned no suitable algorithms.";
+      }
+    }
+#else
     checkCUDNNError(cudnnGetConvolutionBackwardDataAlgorithm(CudaCommon::cudnnHandle(),
                     filter_desc_, y_desc_, conv_desc_, x_desc_,
                     CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST, 0, &bwd_d_algo_));
+#endif
     checkCUDNNError(cudnnGetConvolutionBackwardDataWorkspaceSize(CudaCommon::cudnnHandle(),
                     filter_desc_, y_desc_, conv_desc_, x_desc_,
                     bwd_d_algo_, &data_worksize));

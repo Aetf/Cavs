@@ -23,7 +23,7 @@ class SessionBase {
   }
 
   enum SessionType { SIMPLE=1, MPI=2, GRAPH=4 };
-  virtual int session_type() const {}
+  virtual int session_type() const { return SIMPLE; }
   int opt_type() const { return opt_; }
   //void AddType(SessionType t) { type_ += (int)t; }
 

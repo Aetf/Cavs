@@ -46,7 +46,7 @@ class CudaRTCWrapper {
                                        0, NULL, NULL));
     const int flags_num = 2;
     const char *compiler_flags[] =
-      {{"--gpu-architecture=compute_52"}, {"--fmad=false"}};
+      {"--gpu-architecture=compute_52", "--fmad=false"};
     nvrtcResult compile_result = nvrtcCompileProgram(prog, flags_num, compiler_flags);
     if (compile_result != NVRTC_SUCCESS) {
       size_t log_size;

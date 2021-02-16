@@ -21,6 +21,7 @@ const char* DeviceTypeToString(DeviceType type) {
     return "GPU";
   else if (type == CPU)
     return "CPU";
+  return "CPU";
 }
 
 size_t GetHash(const OpDef& op_def) {
